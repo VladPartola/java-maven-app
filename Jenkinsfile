@@ -9,7 +9,8 @@ pipeline {
                 echo "building the application"
                 sh 'mvn package'
             }
-            stage("build docker image") {
+        }
+        stage("build docker image") {
             steps {
                 echo "building a docker image"
                 withCredentials([usernamePassword(credentialsId: 'docker-key', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')])
@@ -17,10 +18,7 @@ pipeline {
                     sh "echo $PASSWORD | docker login -u $USERNAME --password-stdin"
                     sh 'docker push vladpartola/java-maven-app:jma-1.5'
             }
-        stage("deploy") {
-            steps {
-                echo "deploying the application"
-            }
         }
-    }   
-}
+    }      
+}   
+
