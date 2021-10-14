@@ -33,9 +33,9 @@ pipeline {
         stage("build and push image") {
             steps {
                 script {
-                    buildImage 'vladpartola/java-maven-app:jma-4.0'
+                    buildImage 'vladpartola/java-maven-app:jma-5.0'
                     dockerLogin()
-                    dockerPush 'vladpartola/java-maven-app:jma-4.0'
+                    dockerPush 'vladpartola/java-maven-app:jma-5.0'
                 }
             }
         }
