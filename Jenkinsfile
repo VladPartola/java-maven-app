@@ -24,10 +24,12 @@ pipeline {
                 }
             }
         }
-        stage("build image") {
+        stage("build and push image") {
             steps {
                 script {
-                    buildImage 'vladpartola/java-maven-app:jma-3.5'
+                    buildImage 'vladpartola/java-maven-app:jma-4.0'
+                    dockerLogin()
+                    dockerPush 'vladpartola/java-maven-app:jma-4.0'
                 }
             }
         }
