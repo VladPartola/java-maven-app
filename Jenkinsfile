@@ -27,7 +27,7 @@ pipeline {
         stage("build image") {
             steps {
                 script {
-                    buildImage()
+                    buildImage 'vladpartola/java-maven-app:3.5'
                 }
             }
         }
