@@ -1,3 +1,8 @@
+def script
+
+    Docker(script) {
+        this.script = script
+    }
 def buildJar() {
     echo "building the application..."
     sh 'mvn clean package'
@@ -5,10 +10,10 @@ def buildJar() {
 
 def buildImage() {
     echo "building the docker image..."
-    withCredentials([usernamePassword(credentialsId: 'docker-key', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
-        sh """docker build -t vladpartola/java-maven-app:$IMAGE_NAME ."""
-        sh """echo $PASSWORD | docker login -u $USERNAME --password-stdin"""
-        sh """docker push vladpartola/java-maven-app:$IMAGE_NAME"""
+    script.echo "building the docker image..."
+    script.withCredentials([script.usernamePassword(credentialsId: 'docker-key', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+            script.sh "echo $script.PASSWORD | docker login -u $script.USERNAME --password-stdin"
+    script.sh "docker push vladpartola/java-maven-app:$IMAGE_NAME"
     }
 } 
 
