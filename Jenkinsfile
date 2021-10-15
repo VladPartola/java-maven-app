@@ -32,9 +32,7 @@ pipeline {
             steps {
                 script {
                     echo 'building the docker image...'
-                    sh """
-                    docker build -t vladpartola/java-maven-app:${IMAGE_NAME} .
-                    """
+                    sh """docker build -t vladpartola/java-maven-app:"${IMAGE_NAME}" ."""
                 }
             }
         }
