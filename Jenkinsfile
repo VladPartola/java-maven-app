@@ -3,15 +3,8 @@ pipeline {
     tools {
         maven 'maven-3.8.3'
     }
+    
     stages {
-        stage("init") {
-            steps {
-                script {
-                    gv = load "script.groovy"
-                }
-            }
-        }
-        
         stage("increment version") {
             steps {
                 script {
@@ -39,9 +32,16 @@ pipeline {
             steps {
                 script {
                     echo "building the docker image..."
-                    withCredentials([usernamePassword(credentialsId: 'docker-key', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
-                         sh "docker build -t vladpartola/java-maven-app:${IMAGE_NAME} ."
-                         sh "echo $PASS | docker login -u $USER --password-stdin"
+                    sh "docker build -t vladpartola/java-maven-app:${IMAGE_NAME} ."
+                }
+            }
+        }
+        stage("deploy docker image to dockerhub") {
+            steps {
+                script {
+                    echo "building the docker image..."
+                    withCredentials([usernamePassword(credentialsId: 'docker-key', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                         sh "echo $PASSWORD | docker login -u $USERNAME --password-stdin"
                          sh "docker push vladpartola/java-maven-app:${IMAGE_NAME}"  
                     }
                 }
