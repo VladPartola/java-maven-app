@@ -10,7 +10,7 @@ pipeline {
                 script {
                   echo 'incrementing app version...'
                   sh "mvn build-helper:parse-version versions:set \
-                      -DnewVersion=\\\${parsedVersion:majorVersion}.\\\${parsedVersion:minorVersion}.\\\${parsedVersion:nextIncrementalVersion} \
+                      -DnewVersion=\\\${parsedVersion.majorVersion}.\\\${parsedVersion.minorVersion}.\\\${parsedVersion.nextIncrementalVersion} \
                        versions:commit"
                   def matcher = readFile('pom.xml') =~ '<version>(.+)</version>'
                   def version = matcher[0][1]
@@ -32,7 +32,8 @@ pipeline {
             steps {
                 script {
                     echo 'building the docker image...'
-                    sh """docker build -t vladpartola/java-maven-app:"${IMAGE_NAME}" ."""
+                    echo "${IMAGE_NAME}"
+                    sh('docker build -t vladpartola/java-maven-app:${IMAGE_NAME} .')
                 }
             }
         }
@@ -42,7 +43,7 @@ pipeline {
                     echo "building the docker image..."
                     withCredentials([usernamePassword(credentialsId: 'docker-key', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
                          sh "echo $PASSWORD | docker login -u $USERNAME --password-stdin"
-                         sh "docker push vladpartola/java-maven-app:${IMAGE_NAME}"  
+                         sh('docker push vladpartola/java-maven-app:${IMAGE_NAME}')  
                     }
                 }
             }
