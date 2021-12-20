@@ -3,10 +3,10 @@
 pipeline {
     agent any
     tools {
-        maven '-------------------------------------'
+        maven 'maven-3.8.3'
     }
     environment {
-        ECR_REPO_URL = '---------------------------------'
+        ECR_REPO_URL = '538429593652.dkr.ecr.eu-central-1.amazonaws.com'
         IMAGE_REPO = "${ECR_REPO_URL}/java-maven-app"
     }
     stages {
@@ -46,6 +46,7 @@ pipeline {
         }
         stage('deploy') {
             environment {
+                //You will need to create Secret for AWS ECR Registry in EKS cluster and adjusted reference in Deployment file
                 AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
                 AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
                 APP_NAME = 'java-maven-app'
