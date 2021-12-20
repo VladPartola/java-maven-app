@@ -1,65 +1,70 @@
+#!/usr/bin/env groovy
+
 pipeline {
     agent any
     tools {
-        maven 'maven-3.8.3'
+        maven '-------------------------------------'
     }
-    
+    environment {
+        ECR_REPO_URL = '---------------------------------'
+        IMAGE_REPO = "${ECR_REPO_URL}/java-maven-app"
+    }
     stages {
-        stage("increment version") {
+        stage('increment version') {
             steps {
                 script {
-                  echo 'incrementing app version...'
-                  sh "mvn build-helper:parse-version versions:set \
-                      -DnewVersion=\\\${parsedVersion.majorVersion}.\\\${parsedVersion.minorVersion}.\\\${parsedVersion.nextIncrementalVersion} \
-                       versions:commit"
-                  def matcher = readFile('pom.xml') =~ '<version>(.+)</version>'
-                  def version = matcher[0][1]
-                  env.IMAGE_NAME = "$version-$BUILD_NUMBER"
+                    echo 'incrementing app version...'
+                    sh 'mvn build-helper:parse-version versions:set \
+                        -DnewVersion=\\\${parsedVersion.majorVersion}.\\\${parsedVersion.minorVersion}.\\\${parsedVersion.nextIncrementalVersion} \
+                        versions:commit'
+                    def matcher = readFile('pom.xml') =~ '<version>(.+)</version>'
+                    def version = matcher[0][1]
+                    env.IMAGE_NAME = "$version-$BUILD_NUMBER"
+                    echo "############ ${IMAGE_REPO}"
                 }
             }
         }
-                    
-        
-        stage("build jar") {
+        stage('build app') {
             steps {
-                script {
+               script {
                    echo "building the application..."
                    sh 'mvn clean package'
-                }
+               }
             }
         }
-        stage("build docker image") {
-            steps {
-                script {
-                    echo 'building the docker image...'
-                    echo "${IMAGE_NAME}"
-                    sh('docker build -t vladpartola/java-maven-app:${IMAGE_NAME} .')
-                }
-            }
-        }
-        stage("deploy docker image to dockerhub") {
+        stage('build image') {
             steps {
                 script {
                     echo "building the docker image..."
-                    withCredentials([usernamePassword(credentialsId: 'docker-key', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
-                         sh "echo $PASSWORD | docker login -u $USERNAME --password-stdin"
-                         sh('docker push vladpartola/java-maven-app:${IMAGE_NAME}')  
+                    withCredentials([usernamePassword(credentialsId: 'ecr-credentials', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                        sh "docker build -t ${IMAGE_REPO}:${IMAGE_NAME} ."
+                        sh "echo $PASS | docker login -u $USER --password-stdin ${ECR_REPO_URL}"
+                        sh "docker push ${IMAGE_REPO}:${IMAGE_NAME}"
                     }
+                }
+            }
+        }
+        stage('deploy') {
+            environment {
+                AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
+                AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
+                APP_NAME = 'java-maven-app'
+            }
+            steps {
+                script {
+                    echo 'deploying docker image...'
+                    sh 'envsubst < kubernetes/deployment.yaml | kubectl apply -f -'
+                    sh 'envsubst < kubernetes/service.yaml | kubectl apply -f -'
                 }
             }
         }
         stage('commit version update') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'git-secret', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
-                        sh 'git config --global user.email "jenkins@example.com"'
-                        sh 'git config --global user.name "Your Name"'
-                        
-                        sh 'git status'
-                        sh 'git branch'
-                        sh 'git config --list'
-                        
-                        sh('git remote set-url origin https://${USERNAME}:${PASSWORD}@github.com/VladPartola/java-maven-app.git')
+                    withCredentials([usernamePassword(credentialsId: 'git-secret', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                        sh 'git config user.email "jenkins@example.com"'
+                        sh 'git config user.name "Jenkins"'
+                        sh "git remote set-url origin https://${USER}:${PASS}@github.com/vladpartola/java-maven-app.git"
                         sh 'git add .'
                         sh 'git commit -m "ci: version bump"'
                         sh 'git push origin HEAD:jenkins-jobs'
@@ -67,6 +72,5 @@ pipeline {
                 }
             }
         }
-    }      
-}   
-
+    }
+}
